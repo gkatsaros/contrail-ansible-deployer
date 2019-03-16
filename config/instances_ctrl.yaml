@@ -1,0 +1,45 @@
+provider_config:
+  aws:
+    ec2_access_key: "COMPLETE_HERE"
+    ec2_secret_key: "COMPLETE_HERE"
+    ssh_public_key: /root/.ssh/id_rsa.pub
+    ssh_private_key: /root/.ssh/id_rsa
+    ssh_user: centos
+    instance_type: "t2.large"
+    image: "ami-3548444c"
+    region: "eu-west-1"
+    security_group: "sec-grp-contrail-lab"
+    vpc_subnet_id: "subnet-07ab5ce31ed38d490"
+    assign_public_ip: yes
+    volume_size: 50
+    key_pair: "contrail-contrail-lab"
+  bms:
+    ssh_public_key: /root/.ssh/id_rsa.pub
+    ssh_private_key: /root/.ssh/id_rsa
+    ssh_user: centos
+instances:
+  contrail_controller:
+    provider: aws
+    instance_type: t2.xlarge
+    roles:
+      config_database:
+      config:
+      control:
+      analytics_database:
+      analytics:
+      webui:
+#      kubemanager:
+#      k8s_master:
+#  contrail_vrouter1:
+#    provider: aws
+#    instance_type: t2.medium
+#    roles:
+#      vrouter:
+#      k8s_node:
+global_configuration:
+  CONTAINER_REGISTRY: "hub.juniper.net/contrail"
+  CONTAINER_REGISTRY_USERNAME: JNPR-FieldUser142  
+  CONTAINER_REGISTRY_PASSWORD: COMPLETE_HERE
+contrail_configuration:
+  CONTRAIL_CONTAINER_TAG: 5.0.2-0.360
+  UPGRADE_KERNEL: true

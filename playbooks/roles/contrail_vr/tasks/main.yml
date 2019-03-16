@@ -1,0 +1,62 @@
+---
+- name: set instance data
+  set_fact:
+    instance_data: "{{ instances[hostvars[inventory_hostname].instance_name] }}"
+  tags:
+   - always
+
+- name: set instance name
+  set_fact:
+    instance_name: "{{ hostvars[inventory_hostname].instance_name }}"
+  tags:
+   - always
+
+- name: update common_volumes
+  set_fact:
+    common_volumes: "{{ common_volumes + [ contrail_configuration.STATS_COLLECTOR_DESTINATION_PATH|dirname + ':' + contrail_configuration.STATS_COLLECTOR_DESTINATION_PATH|dirname ] }}"
+  when: contrail_configuration.STATS_COLLECTOR_DESTINATION_PATH is defined
+
+- name: run common tasks
+  include: "common_{{ ansible_system }}.yml"
+
+- name: Run De-Register Role Tasks
+  include: deregister.yml
+    instance_name="{{ hostvars[inventory_hostname].instance_name }}"
+    contrail_configuration="{{ hostvars[inventory_hostname].contrail_configuration }}"
+    ip_address="{{ hostvars['localhost'].deleted_nodes_dict[instance_name] }}"
+  when:
+    - instance_name in node_roles_dict
+    - node_roles_dict[instance_name].deleted_roles | length > 0
+  delegate_to: "{{ api_server }}"
+
+- name: Run Delete Role Tasks
+  include: delete.yml
+    instance_name="{{ hostvars[inventory_hostname].instance_name }}"
+  when:
+    - instance_name in node_roles_dict
+    - node_roles_dict[instance_name].deleted_roles | length > 0
+
+- name: create contrail vrouter for Linux
+  include_role:
+    name: contrail_vrouter
+  when: roles[instance_name].vrouter is defined and ansible_system == 'Linux'
+  tags:
+    - vrouter
+
+- name: create contrail vrouter for Win32NT
+  include_role:
+    name: contrail_vrouter_windows
+  when: roles[instance_name].vrouter is defined and ansible_system == 'Win32NT'
+  tags:
+    - vrouter
+
+- name: create contrail tor agents
+  include_role:
+    name: contrail_toragent
+  when: roles[instance_name].toragent is defined
+
+- name: Pluginize legacy compute
+  include_role:
+    name: contrail_compute_legacy
+  when: roles[instance_name].openstack_compute_legacy is defined
+
